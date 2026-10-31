@@ -2,6 +2,12 @@
 
 This repository contains the website and Node API only. The native overlay and launcher remain in the parent development workspace.
 
+## Current status — 2026-10-31
+
+The initial Blueprint is deployed in the **Dryad** workspace as `dryad-website`. The runtime deploy of commit `d44e75e` is live with its 1 GB disk. `https://dryadclient.dev` serves the website, and `https://www.dryadclient.dev` redirects to it. Both HTTPS health checks return 200 with `{"ok":true}`. Cloudflare records remain DNS only. Do not create a second service when continuing setup.
+
+Stripe payments, SMTP delivery and native license signing are still unconfigured on Render. The original steps below describe the configuration and remaining work.
+
 ## Render
 
 The root `render.yaml` declares one Node 24 web service in Virginia, the entry paid compute plan, and a 1 GB persistent disk. The API serves the built React app and runs its durable queue in the same process. All durable data is under `/opt/render/project/src/data`. This setup supports one instance and briefly interrupts traffic during deployments.
