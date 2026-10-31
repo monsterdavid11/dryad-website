@@ -5,16 +5,22 @@ const required = [
   "STRIPE_WEBHOOK_SECRET",
   "STRIPE_PRICE_MONTHLY",
   "STRIPE_PRICE_YEARLY",
-  "SMTP_HOST",
-  "SMTP_USER",
-  "SMTP_PASS",
   "EMAIL_FROM",
 ];
+const emailProvider =
+  process.env.EMAIL_PROVIDER ||
+  (process.env.RESEND_API_KEY ? "resend" : "smtp");
+required.push(
+  ...(emailProvider === "resend"
+    ? ["RESEND_API_KEY"]
+    : ["SMTP_HOST", "SMTP_USER", "SMTP_PASS"]),
+);
 const missing = required.filter((k) => !process.env[k]);
 console.log(
   JSON.stringify(
     {
       missing,
+      emailProvider,
       httpsOrigin: Boolean(process.env.APP_ORIGIN?.startsWith("https://")),
       signingKeyPresent: existsSync(
         process.env.LICENSE_KEY_PATH || "./data/keys/license.pem",
@@ -25,7 +31,7 @@ console.log(
       livePaymentsEnabled: false,
       database:
         "SQLite — single-instance local implementation; PostgreSQL adapter not implemented",
-      domain: "dryadclient.cc — ownership/DNS not verified",
+      domain: process.env.APP_ORIGIN || "https://dryadclient.dev",
       authenticode: "Certificate and signing not configured",
     },
     null,

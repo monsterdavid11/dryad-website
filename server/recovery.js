@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { digest, secret, failure } from "./security.js";
+import { recoveryEmail } from "./email-templates.js";
 export function installRecovery(
   app,
   { db, origin, requireUser, authLimit, passwordHash, queue },
@@ -9,6 +10,7 @@ export function installRecovery(
     now = () => Math.floor(Date.now() / 1000);
   function requestToken(user, purpose) {
     const token = secret();
+    const expires = now() + (purpose === "verify" ? 86400 : 1200);
     run(
       "DELETE FROM recovery_tokens WHERE user_id=? AND purpose=?",
       user.id,
@@ -19,16 +21,18 @@ export function installRecovery(
       digest(token),
       user.id,
       purpose,
-      now() + (purpose === "verify" ? 86400 : 1200),
+      expires,
     );
-    queue.enqueue("email", {
-      to: user.email,
-      subject:
-        purpose === "verify"
-          ? "Verify your Dryad email"
-          : "Reset your Dryad password",
-      text: `Open this link to ${purpose === "verify" ? "verify your email" : "reset your password"}:\n${origin}/recover?purpose=${purpose}&token=${token}\n\nIf you did not request this, ignore this email.`,
-    });
+    queue.enqueue(
+      "email",
+      recoveryEmail({
+        origin,
+        token,
+        purpose,
+        to: user.email,
+        expiresAt: expires * 1000,
+      }),
+    );
   }
   app.get("/api/account/security", requireUser, (req, res) =>
     res.json({

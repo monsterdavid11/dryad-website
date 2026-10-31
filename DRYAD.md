@@ -56,6 +56,8 @@ The test billing portal is configured. Hosted sandbox testing covered a successf
 
 ## Email verification and recovery
 
+The Resend HTTPS transport and branded verification/recovery templates are implemented. See `EMAIL_DELIVERY.md` for provider selection and setup. Hosted DNS, credentials and actual receipt must be verified before reporting delivery as working.
+
 For actual delivery, set `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, and `EMAIL_FROM`. STARTTLS is required on non-implicit-TLS connections. Configure your provider's SPF/DKIM/DNS instructions before public use.
 
 Without SMTP, **development only** writes queued messages to ignored `web/data/mail/*.json`. Open the local message file and follow its link. These files contain private recovery links; never publish them. Production does not fall back to local mail delivery.
