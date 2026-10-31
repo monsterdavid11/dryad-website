@@ -1,0 +1,7 @@
+node_modules
+.npm-cache
+.tools
+.env
+data
+test-results
+dist

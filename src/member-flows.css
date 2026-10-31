@@ -1,0 +1,64 @@
+.flow-page {
+  max-width: 500px;
+  padding: 70px 25px 100px;
+  margin: auto;
+  min-height: 75vh;
+}
+.flow-page form {
+  margin-top: 25px;
+}
+.flow-page .text-button {
+  margin-top: 20px;
+}
+.policy-page {
+  max-width: 850px;
+  margin: auto;
+  padding: 70px 30px 100px;
+}
+.policy-page h1 {
+  font-size: 43px;
+  letter-spacing: -1.5px;
+  margin: 20px 0 40px;
+}
+.policy-page h2 {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 30px 0 15px;
+}
+.policy-page p {
+  font-size: 13px;
+  line-height: 1.9;
+  color: #a79bb5;
+  margin: 15px 0;
+}
+.policy-page > .button {
+  margin-top: 25px;
+}
+.brand {
+  font-size: 26px;
+  letter-spacing: -1.1px;
+}
+.footer-top > div {
+  flex-wrap: wrap;
+  gap: 18px;
+}
+.footer-top > p {
+  min-width: 130px;
+}
+.price strong {
+  font-size: 52px;
+}
+@media (max-width: 760px) {
+  .flow-page {
+    padding: 35px 22px 60px;
+  }
+  .policy-page h1 {
+    font-size: 34px;
+  }
+  .footer-top > div {
+    font-size: 9px;
+  }
+  .brand {
+    font-size: 23px;
+  }
+}

@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+# Initial hosted preview. Stripe, SMTP and native signing are configured separately.
+services:
+  - type: web
+    name: dryad-website
+    runtime: node
+    repo: https://github.com/monsterdavid11/dryad-website
+    branch: main
+    region: virginia
+    plan: 0.5c-512mb
+    numInstances: 1
+    autoDeployTrigger: commit
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    domains:
+      - dryadclient.dev
+      - www.dryadclient.dev
+    disk:
+      name: dryad-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production
+      - key: APP_ORIGIN
+        value: https://dryadclient.dev
+      - key: LISTEN_HOST
+        value: 0.0.0.0
+      - key: TRUST_PROXY_HOPS
+        value: "1"
+      - key: DATABASE_PATH
+        value: /opt/render/project/src/data/playoverlay.sqlite
+      - key: DEMO_MODE
+        value: "false"
+      - key: DEV_LICENSES
+        value: "false"

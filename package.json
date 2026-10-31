@@ -1,0 +1,38 @@
+{
+  "name": "dryad-members",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24.13"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n api,web \"node --watch --env-file-if-exists=.env server/index.js\" \"vite --host 127.0.0.1\"",
+    "build": "vite build",
+    "start": "node --env-file-if-exists=.env server/index.js",
+    "test": "node --test server/*.test.js",
+    "format": "prettier --write src server tools vite.config.js package.json",
+    "init:keys": "node tools/init-keys.js",
+    "test:launcher": "node --test server/launcher.test.js",
+    "ops": "node --env-file-if-exists=.env tools/ops.js"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0",
+    "lucide-react": "^0.468.0",
+    "nodemailer": "^10.1.7",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.0",
+    "stripe": "^19.0.0"
+  },
+  "devDependencies": {
+    "@stripe/cli": "^1.54.1",
+    "@vitejs/plugin-react": "^5.0.4",
+    "concurrently": "^9.2.1",
+    "prettier": "^3.9.10",
+    "vite": "^7.1.0"
+  }
+}
