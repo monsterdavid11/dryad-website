@@ -1,7 +1,12 @@
 node_modules
 .npm-cache
 .tools
-.env
+.env*
+.git
+*.pem
+*.key
+*.pfx
+*.p12
 data
 test-results
 dist
