@@ -1,5 +1,11 @@
 # Dryad account email
 
+## Verified hosted setup — 2026-10-31
+
+Resend verified `dryadclient.dev` and all required sending DNS records. The live Render service uses `EMAIL_PROVIDER=resend`, sender `Dryad <accounts@dryadclient.dev>`, and a domain-restricted sending-only key. Open/click tracking is disabled; TLS is enforced. Cloudflare website records were preserved, with DMARC initially set to monitoring (`p=none`).
+
+The deployed website's verification and password-reset flows both returned success, Resend marked both messages delivered, and the owner confirmed both arrived in the authorized inbox. The deployed runtime commit is `fdc5c11`. No private credentials, recovery links or recipient details are stored in this runbook.
+
 ## Implementation
 
 Verification and password-reset requests use the durable SQLite email queue. Messages include a branded HTML version and a plain-text version with the same one-use link. Verification links expire after 24 hours; password-reset links expire after 20 minutes. Expired queued messages are discarded before contacting the provider. Requesting another link invalidates earlier links.

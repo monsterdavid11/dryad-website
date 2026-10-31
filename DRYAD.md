@@ -1,6 +1,6 @@
 # Dryad — current implementation and local runbook
 
-**Hosted preview update — 2026-10-31:** https://dryadclient.dev is deployed on Render with one paid Node service and a 1 GB persistent SQLite disk. Cloudflare DNS-only apex/www records are connected; www redirects to the apex. HTTPS and `/api/health` succeeded for both names. Stripe, SMTP and native signing are not configured on the hosted instance. The historical production-gap notes below still apply except for completed hosting/domain setup. See `DEPLOYMENT.md` and the project vault for deployment evidence.
+**Hosted preview update — 2026-10-31:** https://dryadclient.dev is deployed on Render with one paid Node service and a 1 GB persistent SQLite disk. Cloudflare DNS-only apex/www records are connected; www redirects to the apex. HTTPS and `/api/health` succeeded for both names. Resend email delivery is configured, and the owner confirmed actual verification/recovery Inbox receipt. Stripe and native signing are not configured on the hosted instance. Historical production-gap notes below still apply except for completed hosting/domain and email setup. See `DEPLOYMENT.md`, `EMAIL_DELIVERY.md` and the project vault for current evidence.
 
 ## Product decisions
 

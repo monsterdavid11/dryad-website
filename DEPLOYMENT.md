@@ -6,7 +6,7 @@ This repository contains the website and Node API only. The native overlay and l
 
 The initial Blueprint is deployed in the **Dryad** workspace as `dryad-website`. The runtime deploy of commit `d44e75e` is live with its 1 GB disk. `https://dryadclient.dev` serves the website, and `https://www.dryadclient.dev` redirects to it. Both HTTPS health checks return 200 with `{"ok":true}`. Cloudflare records remain DNS only. Do not create a second service when continuing setup.
 
-Stripe payments, SMTP delivery and native license signing are still unconfigured on Render. The original steps below describe the configuration and remaining work.
+Email delivery is now configured through Resend, with actual verification/recovery inbox receipt confirmed on 2026-10-31; see `EMAIL_DELIVERY.md`. Runtime commit `fdc5c11` includes that integration. Stripe payments and native license signing remain unconfigured on Render. The original steps below describe the configuration and remaining work.
 
 ## Render
 
