@@ -58,7 +58,7 @@ See `STRIPE_PAYMENTS.md`. This supersedes older test-only billing notes below.
 - One registered installation. A reset is allowed once every five days. Removing a device frees its slot immediately; the replacement can pair immediately, but another removal must wait until the reset cooldown ends.
 - Cancel future renewals anytime; access lasts through the paid period. Payments are non-refundable except where applicable law requires otherwise.
 - Owned domain: `dryadclient.dev` (user confirmed 2026-10-31). DNS, operator/support details, and hosting deployment remain to be configured. Agent setup status is recorded in `vault/Dryad-Clash/Cloudflare setup.md`.
-- Keep the three concept videos. They were re-rendered with Dryad branding; they are still placeholders, not real gameplay footage.
+- The three features-page videos use actual V1.1.0 gameplay (farming, wall upgrades, session tracking), with the player name blurred. Each is a silent 20-second landscape excerpt at normal speed. Regenerate with `tools/generate-gameplay-previews.py --ffmpeg <path>`; source intervals and output details are in `public/videos/gameplay-manifest.json`.
 
 ## What is implemented
 

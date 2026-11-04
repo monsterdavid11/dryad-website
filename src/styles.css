@@ -715,12 +715,12 @@ button:disabled {
   position: relative;
   background: #1d1927;
   box-shadow: 0 20px 40px #0003;
-  aspect-ratio: 1.65;
+  aspect-ratio: 16 / 9;
 }
 .feature-video video {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 .video-caption {
@@ -749,18 +749,6 @@ button:disabled {
   border-radius: 50%;
   background: #ffffff08;
   border: 1px solid #ffffff25;
-}
-.placeholder-tag {
-  position: absolute;
-  top: 13px;
-  left: 14px;
-  font-size: 6px;
-  letter-spacing: 1.5px;
-  background: #14101a85;
-  border: 1px solid #ffffff10;
-  border-radius: 3px;
-  padding: 5px 6px;
-  color: #b9a7cb;
 }
 .benefits {
   max-width: 1192px;
@@ -2291,7 +2279,7 @@ td:first-child b {
     margin-top: 16px;
   }
   .feature-video {
-    aspect-ratio: 1.6;
+    aspect-ratio: 16 / 9;
   }
   .benefits {
     grid-template-columns: 1fr;

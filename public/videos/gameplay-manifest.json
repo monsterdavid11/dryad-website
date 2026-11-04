@@ -1,0 +1,39 @@
+{
+  "privacy": "Top-left source 480x140 area downsampled and blurred before scaling",
+  "format": "1280x720 H.264, 30fps, silent, fast-start MP4",
+  "clips": [
+    {
+      "file": "farming-v1-1-0.mp4",
+      "poster": "farming-v1-1-0.webp",
+      "source": "2026-11-04 00-22-00.mp4",
+      "start_seconds": 18,
+      "duration_seconds": 20,
+      "playback_speed": 1,
+      "description": "Perimeter deployment and farming",
+      "bytes": 4406289,
+      "decode_errors": 0
+    },
+    {
+      "file": "upgrades-v1-1-0.mp4",
+      "poster": "upgrades-v1-1-0.webp",
+      "source": "2026-10-31 02-51-31.mp4",
+      "start_seconds": 356,
+      "duration_seconds": 20,
+      "playback_speed": 1,
+      "description": "Wall selection and upgrades",
+      "bytes": 2247000,
+      "decode_errors": 0
+    },
+    {
+      "file": "insights-v1-1-0.mp4",
+      "poster": "insights-v1-1-0.webp",
+      "source": "2026-10-31 03-01-28.mp4",
+      "start_seconds": 1064,
+      "duration_seconds": 20,
+      "playback_speed": 1,
+      "description": "Farming session tracker and resource changes",
+      "bytes": 4104430,
+      "decode_errors": 0
+    }
+  ]
+}

@@ -459,14 +459,14 @@ function FeatureVideo({ item }) {
     <div className={"feature-video video-" + item.video}>
       <video
         ref={video}
-        src={"/videos/" + item.video + ".webm"}
-        poster={"/videos/" + item.video + ".png"}
+        src={"/videos/" + item.video + "-v1-1-0.mp4"}
+        poster={"/videos/" + item.video + "-v1-1-0.webp"}
         autoPlay={playing}
         muted
         loop
         playsInline
         preload="metadata"
-        aria-label={item.detail + " animated placeholder"}
+        aria-label={item.detail + " recorded gameplay"}
       />
       <div className="video-caption">
         <span>
@@ -483,7 +483,6 @@ function FeatureVideo({ item }) {
           )}
         </button>
       </div>
-      <span className="placeholder-tag">CONCEPT PREVIEW</span>
     </div>
   );
 }
