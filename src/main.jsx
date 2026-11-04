@@ -816,8 +816,6 @@ function Login() {
           <Link to="/recover">Forgot your password?</Link>
           <br />
           Your password is securely hashed.
-          <br />
-          This is a local development preview.
         </p>
       </div>
     </section>
