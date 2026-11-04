@@ -2735,3 +2735,35 @@ td:first-child b {
     scroll-behavior: smooth;
   }
 }
+
+.discord-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: 1px solid #ffffff18;
+  border-radius: 10px;
+  background: #a57aff0a;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+.discord-link:hover {
+  background: #a57aff24;
+  border-color: #a57aff70;
+}
+.discord-link:focus-visible {
+  outline: 2px solid #bca6f7;
+  outline-offset: 4px;
+}
+@media (max-width: 600px) {
+  .nav-actions {
+    gap: 8px;
+  }
+  .nav-actions .discord-link {
+    width: 30px;
+    height: 30px;
+  }
+}

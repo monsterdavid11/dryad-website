@@ -86,6 +86,20 @@ function Brand() {
     </Link>
   );
 }
+function DiscordLink() {
+  return (
+    <a
+      className="discord-link"
+      href="https://discord.gg/aVRx88smYU"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Join the Dryad Discord (opens in a new tab)"
+      title="Join our Discord"
+    >
+      <img src="/icons/discord.svg" alt="" width="20" height="20" />
+    </a>
+  );
+}
 function Button({ children, className = "", to, ...props }) {
   return to ? (
     <Link to={to} className={"button " + className} {...props}>
@@ -176,6 +190,7 @@ function App() {
               <NavLink to="/account">Dashboard</NavLink>
             </nav>
             <div className="nav-actions">
+              <DiscordLink />
               {user ? (
                 <Link className="signin" to="/account">
                   <span className="avatar tiny">{user.name[0]}</span>
@@ -266,6 +281,7 @@ function Footer() {
         <span className="local-label">
           <i /> Windows x64
         </span>
+        <DiscordLink />
       </div>
     </footer>
   );
