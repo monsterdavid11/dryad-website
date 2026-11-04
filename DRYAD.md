@@ -1,5 +1,16 @@
 # Dryad — current implementation and local runbook
 
+**Website downloads — 2026-11-03:** Account → Downloads provides the complete
+protected Windows ZIP (launcher, DLL, injector and instructions). An authenticated,
+verified account with active membership and no billing hold is required. Initial
+download does not consume a device slot; pairing and machine-bound licensing happen
+in the launcher. `/api/account/release` exposes metadata only; the session-protected
+`/api/account/release/download` streams the private package after rechecking access
+and the enabled release catalog. No package is served from the frontend public
+directory. Startup checks package size/hash and copies it to persistent private
+storage using the optional `package` entry in the release manifest. Existing
+launcher-authenticated single-use DLL downloads remain available.
+
 **Live Stripe activation — 2026-11-03:** Real $5.99/month and $48.16/year purchases
 are enabled on the existing Render service. Runtime `c5322b0` is live; email and
 protected release licensing remain configured. Both live unpaid Checkout plans,

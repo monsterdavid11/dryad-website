@@ -62,3 +62,22 @@
     font-size: 23px;
   }
 }
+
+.release-download {
+  max-width: 820px;
+}
+.release-download > .button,
+.release-download > .text-button {
+  margin: 12px 16px 12px 0;
+}
+.release-steps {
+  padding-left: 22px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+.release-hash {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  margin-top: 12px;
+}

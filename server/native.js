@@ -81,6 +81,66 @@ export function installNative(
       throw failure(403, "Verify your email before connecting a device.");
     return entitlement(user.id);
   }
+  function websitePackage() {
+    return get(
+      "SELECT r.version,p.path,p.sha256,p.bytes FROM release_catalog r JOIN release_packages p ON p.channel=r.channel AND p.release_sha256=r.sha256 WHERE r.channel='stable' AND r.enabled=1",
+    );
+  }
+  app.get("/api/account/release", requireUser, (req, res) => {
+    const release = websitePackage();
+    const verified = !!get(
+      "SELECT user_id FROM verified_emails WHERE user_id=?",
+      req.user.id,
+    );
+    let eligible = false;
+    try {
+      allowedUser(req.user);
+      eligible = true;
+    } catch (error) {
+      if (error.status !== 403) throw error;
+    }
+    res.setHeader("Cache-Control", "no-store");
+    res.json({
+      emailVerified: verified,
+      canDownload: !!(eligible && signing && release),
+      release: release
+        ? {
+            version: release.version,
+            bytes: release.bytes,
+            sha256: release.sha256,
+          }
+        : null,
+    });
+  });
+  app.get("/api/account/release/download", requireUser, (req, res) => {
+    allowedUser(req.user);
+    if (!signing) throw failure(503, "Release signing is unavailable.");
+    const release = websitePackage();
+    if (!release)
+      throw failure(404, "No protected release package is available.");
+    let size;
+    try {
+      size = statSync(release.path).size;
+    } catch {
+      size = 0;
+    }
+    if (size !== release.bytes)
+      throw failure(404, "Release is no longer available.");
+    audit(req.user.id, "release.download", {
+      version: release.version,
+      sha256: release.sha256,
+    });
+    res.setHeader("Cache-Control", "private, no-store");
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Length", release.bytes);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="Dryad-${release.version}.zip"`,
+    );
+    createReadStream(release.path)
+      .on("error", () => res.destroy())
+      .pipe(res);
+  });
   function device(id) {
     const d = get(
       "SELECT d.*,k.public_key,k.revoked_at,h.fingerprint AS hardware FROM devices d JOIN device_keys k ON k.device_id=d.id LEFT JOIN device_hardware h ON h.device_id=d.id WHERE d.id=?",

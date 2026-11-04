@@ -4,5 +4,10 @@
   "file": "Dryad-1.0.0.dll",
   "bytes": 1579008,
   "sha256": "c718d5ee67d051323934897a9e55765f9dfd9bd2adb02b5071134ff317784773",
-  "signingKeyId": "c1fd258abf9ab390"
+  "signingKeyId": "c1fd258abf9ab390",
+  "package": {
+    "bytes": 34056658,
+    "file": "Dryad-1.0.0.zip",
+    "sha256": "c6dfd0347212ef38909f69c79691e37c274bac8b0c1398b5d619ca61b16e76ff"
+  }
 }

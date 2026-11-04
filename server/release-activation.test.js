@@ -21,6 +21,10 @@ test("bundled protected release verifies integrity/pin, backs up data, persists 
     data[0] = 0x4d;
     data[1] = 0x5a;
     writeFileSync(resolve(dir, "Dryad.dll"), data);
+    const zip = Buffer.alloc(2048, 2);
+    zip[0] = 0x50;
+    zip[1] = 0x4b;
+    writeFileSync(resolve(dir, "Dryad.zip"), zip);
     const manifest = {
       channel: "stable",
       version: "1.0.0",
@@ -28,6 +32,11 @@ test("bundled protected release verifies integrity/pin, backs up data, persists 
       bytes: data.length,
       sha256: createHash("sha256").update(data).digest("hex"),
       signingKeyId: "1234567890abcdef",
+      package: {
+        file: "Dryad.zip",
+        bytes: zip.length,
+        sha256: createHash("sha256").update(zip).digest("hex"),
+      },
     };
     const file = resolve(dir, "stable.json");
     writeFileSync(file, JSON.stringify(manifest));
@@ -45,6 +54,9 @@ test("bundled protected release verifies integrity/pin, backs up data, persists 
     const row = db.prepare("SELECT * FROM release_catalog").get();
     assert.deepEqual(readFileSync(row.path), data);
     assert.equal(row.enabled, 1);
+    const pkg = db.prepare("SELECT * FROM release_packages").get();
+    assert.deepEqual(readFileSync(pkg.path), zip);
+    assert.equal(pkg.release_sha256, manifest.sha256);
     db.prepare("UPDATE release_catalog SET enabled=0").run();
     assert.equal(
       (await activateRelease(db, file, resolve(dir, "app.sqlite"), null))
@@ -52,6 +64,12 @@ test("bundled protected release verifies integrity/pin, backs up data, persists 
       false,
     );
     assert.equal(readdirSync(resolve(dir, "backups")).length, 1);
+    writeFileSync(resolve(dir, "Dryad.zip"), Buffer.alloc(2048));
+    await assert.rejects(
+      activateRelease(db, file, resolve(dir, "app.sqlite"), null),
+      /package failed integrity/,
+    );
+    writeFileSync(resolve(dir, "Dryad.zip"), zip);
     writeFileSync(resolve(dir, "Dryad.dll"), Buffer.alloc(2048));
     await assert.rejects(
       activateRelease(db, file, resolve(dir, "app.sqlite"), null),

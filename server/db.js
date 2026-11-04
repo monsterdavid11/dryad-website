@@ -29,6 +29,7 @@ export function openDatabase(path) {
     CREATE INDEX IF NOT EXISTS jobs_ready ON jobs(state,available);
     CREATE TABLE IF NOT EXISTS audit(id TEXT PRIMARY KEY, user_id TEXT, action TEXT NOT NULL, at INTEGER NOT NULL, details TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS release_catalog(channel TEXT PRIMARY KEY, version TEXT NOT NULL, path TEXT NOT NULL, sha256 TEXT NOT NULL, bytes INTEGER NOT NULL, enabled INTEGER NOT NULL DEFAULT 1);
+    CREATE TABLE IF NOT EXISTS release_packages(channel TEXT PRIMARY KEY REFERENCES release_catalog(channel), release_sha256 TEXT NOT NULL, path TEXT NOT NULL, sha256 TEXT NOT NULL, bytes INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS billing_holds(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id),reason TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS download_tokens(hash TEXT PRIMARY KEY, device_id TEXT NOT NULL REFERENCES devices(id) ON DELETE CASCADE, channel TEXT NOT NULL, sha256 TEXT NOT NULL, expires INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS device_hardware(device_id TEXT PRIMARY KEY REFERENCES devices(id) ON DELETE CASCADE, fingerprint TEXT NOT NULL);

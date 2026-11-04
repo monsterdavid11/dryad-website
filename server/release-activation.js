@@ -35,6 +35,26 @@ export async function activateRelease(db, manifestFile, databaseFile, signing) {
     throw Error("Protected release binary failed integrity verification");
   if (signing && signing.kid !== m.signingKeyId)
     throw Error("License signing key does not match protected release");
+  const pkg = m.package;
+  if (pkg) {
+    if (
+      typeof pkg.file !== "string" ||
+      basename(pkg.file) !== pkg.file ||
+      !pkg.file.endsWith(".zip") ||
+      !/^[a-f0-9]{64}$/.test(pkg.sha256) ||
+      !Number.isSafeInteger(pkg.bytes) ||
+      pkg.bytes < 1024
+    )
+      throw Error("Invalid protected release package manifest");
+    const zip = readFileSync(resolve(dirname(path), pkg.file));
+    if (
+      zip.length !== pkg.bytes ||
+      zip[0] !== 0x50 ||
+      zip[1] !== 0x4b ||
+      createHash("sha256").update(zip).digest("hex") !== pkg.sha256
+    )
+      throw Error("Protected release package failed integrity verification");
+  }
   const root = dirname(resolve(databaseFile)),
     dir = resolve(root, "releases");
   mkdirSync(dir, { recursive: true });
@@ -64,6 +84,20 @@ export async function activateRelease(db, manifestFile, databaseFile, signing) {
     "INSERT INTO release_catalog VALUES(?,?,?,?,?,?)" +
       " ON CONFLICT(channel) DO UPDATE SET version=excluded.version,path=excluded.path,sha256=excluded.sha256,bytes=excluded.bytes,enabled=excluded.enabled",
   ).run(m.channel, m.version, target, m.sha256, m.bytes, enabled);
+  if (pkg) {
+    const packageTarget = resolve(dir, pkg.sha256 + ".zip");
+    if (
+      !existsSync(packageTarget) ||
+      createHash("sha256").update(readFileSync(packageTarget)).digest("hex") !==
+        pkg.sha256
+    ) {
+      copyFileSync(resolve(dirname(path), pkg.file), packageTarget + ".tmp");
+      renameSync(packageTarget + ".tmp", packageTarget);
+    }
+    db.prepare(
+      "INSERT INTO release_packages VALUES(?,?,?,?,?) ON CONFLICT(channel) DO UPDATE SET release_sha256=excluded.release_sha256,path=excluded.path,sha256=excluded.sha256,bytes=excluded.bytes",
+    ).run(m.channel, m.sha256, packageTarget, pkg.sha256, pkg.bytes);
+  }
   return {
     channel: m.channel,
     version: m.version,

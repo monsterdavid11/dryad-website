@@ -26,6 +26,7 @@ import {
   Clock3,
   Cpu,
   CreditCard,
+  Download,
   Fingerprint,
   Flame,
   Gem,
@@ -47,6 +48,7 @@ import {
 import "./styles.css";
 import MemberFlows, { SecurityPanel } from "./MemberFlows.jsx";
 import "./member-flows.css";
+import ReleaseDownload from "./ReleaseDownload.jsx";
 
 const Auth = createContext(null);
 async function api(path, options = {}) {
@@ -990,6 +992,7 @@ function Account() {
     "overview",
     "scripts",
     "devices",
+    "downloads",
     "billing",
     "settings",
   ].includes(params.get("tab"))
@@ -1055,6 +1058,7 @@ function Account() {
     { id: "overview", name: "Overview", icon: LayoutDashboard },
     { id: "scripts", name: "Script activity", icon: Activity },
     { id: "devices", name: "Devices", icon: Monitor },
+    { id: "downloads", name: "Downloads", icon: Download },
     { id: "billing", name: "Membership", icon: CreditCard },
     { id: "settings", name: "Account settings", icon: UserRound },
   ];
@@ -1146,6 +1150,7 @@ function Account() {
                     scripts:
                       "A closer look at the routines behind your progress.",
                     devices: "Keep track of where your overlay belongs.",
+                    downloads: "Your protected release, ready for Windows.",
                     billing: "Your membership, on your terms.",
                     settings: "The details that make this account yours.",
                   }[tab]}
@@ -1340,6 +1345,12 @@ function Account() {
                     >
                       Manage membership <ArrowUpRight size={14} />
                     </Button>
+                    <Button
+                      className="full"
+                      onClick={() => setParams({ tab: "downloads" })}
+                    >
+                      <Download size={16} /> Get the protected release
+                    </Button>
                   </section>
                 </div>
                 <ScriptTable
@@ -1349,6 +1360,14 @@ function Account() {
               </>
             )}
             {tab === "scripts" && <ScriptTable rows={rows} />}
+            {tab === "downloads" && (
+              <ReleaseDownload
+                api={api}
+                Button={Button}
+                active={!!active}
+                demo={user.demo}
+              />
+            )}
             {tab === "devices" && (
               <section className="panel settings-panel">
                 <div className="panel-title">
