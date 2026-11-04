@@ -1,0 +1,8 @@
+{
+  "channel": "stable",
+  "version": "1.0.0",
+  "file": "Dryad-1.0.0.dll",
+  "bytes": 1579008,
+  "sha256": "c718d5ee67d051323934897a9e55765f9dfd9bd2adb02b5071134ff317784773",
+  "signingKeyId": "c1fd258abf9ab390"
+}

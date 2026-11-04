@@ -1411,9 +1411,10 @@ function Account() {
                 <div className="info-note">
                   <Fingerprint size={19} />
                   <p>
-                    Dryad uses a per-installation key. Hardware serial numbers
-                    are not collected. Removing a device revokes its launcher
-                    session; any existing lease expires within ten minutes.
+                    Dryad uses an installation key and a hashed computer
+                    identity. Raw Windows and hardware identifiers stay on your
+                    computer. Removing a device revokes its launcher session;
+                    any existing lease expires within ten minutes.
                   </p>
                 </div>
               </section>

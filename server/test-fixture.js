@@ -75,6 +75,7 @@ export async function fixture({ signing: customSigning, ...options } = {}) {
     const keys = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
     return {
       ...keys,
+      hardware: digest(randomUUID()),
       encoded: keys.publicKey
         .export({ type: "spki", format: "der" })
         .toString("base64"),
@@ -89,7 +90,11 @@ export async function fixture({ signing: customSigning, ...options } = {}) {
     return request("/native/pair/start", {
       method: "POST",
       native: true,
-      body: { name: "Dryad test PC", publicKey: key.encoded },
+      body: {
+        name: "Dryad test PC",
+        publicKey: key.encoded,
+        hardware: key.hardware,
+      },
     });
   }
   async function pair(key, account) {
@@ -119,7 +124,7 @@ export async function fixture({ signing: customSigning, ...options } = {}) {
       body: { deviceId: auth.deviceId, purpose },
     });
     if (ch.status !== 200) return ch;
-    const payload = JSON.stringify(body),
+    const payload = JSON.stringify({ hardware: key.hardware, ...body }),
       envelope = {
         deviceId: auth.deviceId,
         challengeId: ch.data.id,

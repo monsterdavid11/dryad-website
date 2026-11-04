@@ -4,6 +4,7 @@ import { createApp } from "./app.js";
 import { readFileSync, existsSync } from "node:fs";
 import { signer } from "./security.js";
 import { reconcileSubscriptions } from "./reconcile.js";
+import { activateRelease } from "./release-activation.js";
 const production = process.env.NODE_ENV === "production";
 if (production && !process.env.APP_ORIGIN?.startsWith("https://"))
   throw new Error("Production APP_ORIGIN must use HTTPS.");
@@ -13,6 +14,18 @@ if (key && !key.startsWith("sk_test_"))
 const db = openDatabase(
   process.env.DATABASE_PATH || "./data/playoverlay.sqlite",
 );
+const signingPath = process.env.LICENSE_KEY_PATH || "./data/keys/license.pem";
+const signing = existsSync(signingPath)
+  ? signer(readFileSync(signingPath))
+  : null;
+const activated = await activateRelease(
+  db,
+  process.env.DRYAD_RELEASE_MANIFEST,
+  process.env.DATABASE_PATH || "./data/playoverlay.sqlite",
+  signing,
+);
+if (activated)
+  console.log(JSON.stringify({ event: "protected_release", ...activated }));
 const app = createApp({
   db,
   production,
@@ -24,11 +37,7 @@ const app = createApp({
     monthly: process.env.STRIPE_PRICE_MONTHLY,
     yearly: process.env.STRIPE_PRICE_YEARLY,
   },
-  signing: existsSync(process.env.LICENSE_KEY_PATH || "./data/keys/license.pem")
-    ? signer(
-        readFileSync(process.env.LICENSE_KEY_PATH || "./data/keys/license.pem"),
-      )
-    : null,
+  signing,
   allowDevLicenses: !production && process.env.DEV_LICENSES === "true",
   durableWebhooks: true,
   trustProxyHops: Number(process.env.TRUST_PROXY_HOPS) || 0,

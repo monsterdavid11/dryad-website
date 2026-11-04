@@ -13,6 +13,59 @@ import Stripe from "stripe";
 import { reconcileSubscriptions } from "./reconcile.js";
 const origin = "http://127.0.0.1:5173";
 import { fixture } from "./test-fixture.js";
+
+test("hardware binding rejects missing identities, changed hardware, and inactive membership", async () => {
+  const f = await fixture();
+  try {
+    const account = await f.register(),
+      key = f.identity();
+    f.grant(account.data.user);
+    const missing = await f.request("/native/pair/start", {
+      method: "POST",
+      native: true,
+      body: { name: "PC", publicKey: key.encoded },
+    });
+    assert.equal(missing.status, 400);
+    const auth = await f.pair(key, account);
+    assert.equal(
+      JSON.parse(Buffer.from(auth.lease.split(".")[1], "base64url")).hardware,
+      key.hardware,
+    );
+    const changed = { ...key, hardware: "0".repeat(64) };
+    const pending = await f.start(changed);
+    assert.equal(
+      (
+        await f.request("/account/pairing/approve", {
+          method: "POST",
+          cookie: account.cookie,
+          body: { code: pending.data.userCode },
+        })
+      ).status,
+      403,
+    );
+    assert.equal(
+      (
+        await f.native(changed, auth, "refresh", {
+          refreshToken: auth.refreshToken,
+        })
+      ).status,
+      403,
+    );
+    f.db
+      .prepare("DELETE FROM dev_entitlements WHERE user_id=?")
+      .run(account.data.user.id);
+    assert.equal(
+      (
+        await f.native(key, auth, "refresh", {
+          refreshToken: auth.refreshToken,
+        })
+      ).status,
+      403,
+    );
+  } finally {
+    await f.close();
+  }
+});
 test("native login verifies email, enforces device limits/reset cooldown, binds proofs and revokes reused refresh tokens", async () => {
   const f = await fixture();
   try {

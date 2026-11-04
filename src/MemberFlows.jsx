@@ -111,8 +111,14 @@ export default function MemberFlows({ kind, user, api, Button }) {
             <p>
               Your email, display name, password hash, browser sessions, Stripe
               customer and subscription references, installation public keys,
-              friendly device names, and usage aggregates. Stripe handles
-              payment details.
+              friendly device names, hashed computer identities, and usage
+              aggregates. Stripe handles payment details.
+            </p>
+            <p>
+              The launcher hashes your Windows installation identifier and
+              hardware UUID to bind a license to this computer. Only that hash
+              is sent to the service; the raw identifiers remain on your
+              computer.
             </p>
             <h2>Usage reporting</h2>
             <p>
@@ -120,8 +126,8 @@ export default function MemberFlows({ kind, user, api, Button }) {
               completed runs, verified resource gains, and wall upgrades. The
               launcher sends these over authenticated requests; use{" "}
               <code>--no-telemetry</code> to disable sending. No game
-              credentials, screenshots, raw input logs, or hardware serials are
-              collected by this integration.
+              credentials, screenshots, raw input logs, or raw hardware
+              identifiers are sent by this integration.
             </p>
             <h2>Control & retention</h2>
             <p>

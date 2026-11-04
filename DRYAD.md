@@ -1,6 +1,12 @@
-# Dryad — current implementation and local runbook
+# Dryad â€” current implementation and local runbook
 
-**Hosted preview update — 2026-10-31:** https://dryadclient.dev is deployed on Render with one paid Node service and a 1 GB persistent SQLite disk. Cloudflare DNS-only apex/www records are connected; www redirects to the apex. HTTPS and `/api/health` succeeded for both names. Resend email delivery is configured, and the owner confirmed actual verification/recovery Inbox receipt. Stripe and native signing are not configured on the hosted instance. Historical production-gap notes below still apply except for completed hosting/domain and email setup. See `DEPLOYMENT.md`, `EMAIL_DELIVERY.md` and the project vault for current evidence.
+**Protected release update â€” 2026-10-31:** Dryad 1.0.0 is built locally with
+machine-bound membership leases and a separate production signing pin. New API
+binding tables and updated launcher/native checks are tested together. See
+`../RELEASE-1.0.0.md` for pending hosted activation, key installation and billing
+steps. This build task does not deploy these changes or enable live payments.
+
+**Hosted preview update â€” 2026-10-31:** https://dryadclient.dev is deployed on Render with one paid Node service and a 1 GB persistent SQLite disk. Cloudflare DNS-only apex/www records are connected; www redirects to the apex. HTTPS and `/api/health` succeeded for both names. Resend email delivery is configured, and the owner confirmed actual verification/recovery Inbox receipt. Stripe and native signing are not configured on the hosted instance. Historical production-gap notes below still apply except for completed hosting/domain and email setup. See `DEPLOYMENT.md`, `EMAIL_DELIVERY.md` and the project vault for current evidence.
 
 ## Product decisions
 
@@ -44,9 +50,9 @@ npx stripe login
 npx stripe listen --all-snapshot --forward-to http://127.0.0.1:3001/api/billing/webhook
 ```
 
-The listener prints `whsec_…`. Put that value in `STRIPE_WEBHOOK_SECRET` in `.env`, keep the listener running, and restart `npm run dev`. This is the **CLI listener's** secret, separate from the API key and from a hosted Dashboard webhook endpoint secret.
+The listener prints `whsec_â€¦`. Put that value in `STRIPE_WEBHOOK_SECRET` in `.env`, keep the listener running, and restart `npm run dev`. This is the **CLI listener's** secret, separate from the API key and from a hosted Dashboard webhook endpoint secret.
 
-In Stripe test mode, configure recurring USD prices of 599 cents/month and 4816 cents/year. `.env` needs `STRIPE_SECRET_KEY=sk_test_…`, both price IDs, and the signing secret. No secret belongs in a `VITE_` variable, chat message, screenshot, or tracked file.
+In Stripe test mode, configure recurring USD prices of 599 cents/month and 4816 cents/year. `.env` needs `STRIPE_SECRET_KEY=sk_test_â€¦`, both price IDs, and the signing secret. No secret belongs in a `VITE_` variable, chat message, screenshot, or tracked file.
 
 ```powershell
 node --env-file=.env tools/check-stripe.js

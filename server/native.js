@@ -30,6 +30,20 @@ export function installNative(
       Date.now(),
       JSON.stringify(details),
     );
+  app.get("/api/native/status", (req, res) => {
+    const release = get(
+      "SELECT channel,version,sha256,bytes FROM release_catalog WHERE channel='stable' AND enabled=1",
+    );
+    res.setHeader("Cache-Control", "no-store");
+    res.json({
+      product: "dryad",
+      licensingReady: !!signing,
+      keyId: signing?.kid || null,
+      hardwareBinding: "sha256-windows-installation-smbios-v1",
+      developmentLicenses: !!allowDevLicenses,
+      release: release || null,
+    });
+  });
   function entitlement(id) {
     if (get("SELECT id FROM billing_holds WHERE user_id=?", id))
       throw failure(
@@ -69,11 +83,16 @@ export function installNative(
   }
   function device(id) {
     const d = get(
-      "SELECT d.*,k.public_key,k.revoked_at FROM devices d JOIN device_keys k ON k.device_id=d.id WHERE d.id=?",
+      "SELECT d.*,k.public_key,k.revoked_at,h.fingerprint AS hardware FROM devices d JOIN device_keys k ON k.device_id=d.id LEFT JOIN device_hardware h ON h.device_id=d.id WHERE d.id=?",
       id,
     );
     if (!d || d.revoked_at)
       throw failure(401, "Device has been revoked. Sign in again.");
+    if (!d.hardware)
+      throw failure(
+        401,
+        "Pair this computer again with the current Dryad launcher.",
+      );
     return d;
   }
   function issue(d) {
@@ -91,6 +110,7 @@ export function installNative(
       aud: "dryad-overlay",
       sub: d.user_id,
       device: d.id,
+      hardware: d.hardware,
       product: "dryad",
       iat: now(),
       exp: Math.min(now() + 600, access.until),
@@ -140,6 +160,8 @@ export function installNative(
     } catch {
       throw failure(400, "Invalid native JSON.");
     }
+    if (body.hardware !== d.hardware)
+      throw failure(403, "License belongs to a different computer.");
     const consumed = run(
       "DELETE FROM native_challenges WHERE id=?",
       challengeId,
@@ -163,7 +185,12 @@ export function installNative(
     return { d, body, t };
   }
   app.post("/api/native/pair/start", (req, res) => {
-    const { publicKey, name } = req.body;
+    const { publicKey, name, hardware } = req.body;
+    if (typeof hardware !== "string" || !/^[a-f0-9]{64}$/.test(hardware))
+      throw failure(
+        400,
+        "A valid hardware identity is required. Update your Dryad launcher.",
+      );
     if (
       typeof publicKey !== "string" ||
       publicKey.length > 1024 ||
@@ -187,6 +214,7 @@ export function installNative(
       name,
       now() + 300,
     );
+    run("INSERT INTO pairing_hardware VALUES(?,?)", id, hardware);
     res.json({
       deviceCode: code,
       userCode,
@@ -231,6 +259,20 @@ export function installNative(
           "Your one-device allowance is in use. Remove the old device first.",
         );
       const id = existing?.id || randomUUID();
+      const hardware = get(
+        "SELECT fingerprint FROM pairing_hardware WHERE pairing_id=?",
+        p.id,
+      )?.fingerprint;
+      if (!hardware)
+        throw failure(400, "Pair again with the current Dryad launcher.");
+      const bound =
+        existing &&
+        get("SELECT fingerprint FROM device_hardware WHERE device_id=?", id);
+      if (bound && bound.fingerprint !== hardware)
+        throw failure(
+          403,
+          "Remove the old device before pairing a different computer.",
+        );
       if (!existing) {
         run(
           "INSERT INTO devices VALUES(?,?,?,?)",
@@ -244,6 +286,11 @@ export function installNative(
         run("UPDATE device_keys SET revoked_at=NULL WHERE device_id=?", id);
         run("DELETE FROM native_tokens WHERE device_id=?", id);
       }
+      run(
+        "INSERT INTO device_hardware VALUES(?,?) ON CONFLICT(device_id) DO UPDATE SET fingerprint=excluded.fingerprint",
+        id,
+        hardware,
+      );
       run(
         "UPDATE pairings SET user_id=?,device_id=? WHERE id=?",
         req.user.id,
