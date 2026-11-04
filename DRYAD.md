@@ -1,5 +1,33 @@
 # Dryad — current implementation and local runbook
 
+## Website navigation, version log and request limits — 2026-11-04
+
+Public copy now describes the overlay directly. `/versions` records Windows and
+website releases. Active members see Dashboard in the header and download links
+on the feature page; Membership opens management instead of a second Checkout.
+The backend reports current membership status with expiry and billing holds.
+Navigation/focus and Checkout confirmation refresh that status.
+
+Limits persist across restarts in SQLite `request_limits`. Only SHA-256 bucket
+identifiers are retained; expired buckets are pruned on requests. Limits are:
+
+| Requests | Limit | Scope |
+| --- | --- | --- |
+| General API | 150/minute | IP (IPv6 /56 grouping) |
+| Authentication and recovery | 20/15 minutes | IP |
+| Failed login attempts | 10/15 minutes | Normalized email; successful login attempts are removed |
+| Verification/recovery email requests | 5/hour plus 3/hour | IP plus account or normalized destination |
+| Website/native downloads | 20/15 minutes plus 5/15 minutes | IP plus account; shared across artifact types |
+| Checkout and portal creation | 10/15 minutes | Account |
+| Pairing starts | 10/15 minutes | IP |
+| Account exports | 3/hour | Account |
+
+Throttled requests return JSON HTTP 429 and `Retry-After` seconds. Requests count
+before work starts, including denied download attempts. Stripe webhooks use their
+existing signature/durable-event path and are exempt from browser request quotas.
+This is the single-instance implementation; preserve the configured trusted-proxy
+hop count so arbitrary forwarded IP headers cannot select another bucket.
+
 **Website downloads — 2026-11-03:** Account → Downloads provides the complete
 protected Windows ZIP (launcher, DLL, injector and instructions). An authenticated,
 verified account with active membership and no billing hold is required. Initial

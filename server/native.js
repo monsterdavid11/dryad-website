@@ -14,6 +14,7 @@ export function installNative(
     resetDays = 5,
     deviceLimit = 1,
     requireUser,
+    limits,
   },
 ) {
   if (production && allowDevLicenses)
@@ -112,35 +113,41 @@ export function installNative(
         : null,
     });
   });
-  app.get("/api/account/release/download", requireUser, (req, res) => {
-    allowedUser(req.user);
-    if (!signing) throw failure(503, "Release signing is unavailable.");
-    const release = websitePackage();
-    if (!release)
-      throw failure(404, "No protected release package is available.");
-    let size;
-    try {
-      size = statSync(release.path).size;
-    } catch {
-      size = 0;
-    }
-    if (size !== release.bytes)
-      throw failure(404, "Release is no longer available.");
-    audit(req.user.id, "release.download", {
-      version: release.version,
-      sha256: release.sha256,
-    });
-    res.setHeader("Cache-Control", "private, no-store");
-    res.setHeader("Content-Type", "application/zip");
-    res.setHeader("Content-Length", release.bytes);
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="Dryad-${release.version}.zip"`,
-    );
-    createReadStream(release.path)
-      .on("error", () => res.destroy())
-      .pipe(res);
-  });
+  app.get(
+    "/api/account/release/download",
+    requireUser,
+    limits.downloadIp,
+    limits.downloadAccount,
+    (req, res) => {
+      allowedUser(req.user);
+      if (!signing) throw failure(503, "Release signing is unavailable.");
+      const release = websitePackage();
+      if (!release)
+        throw failure(404, "No protected release package is available.");
+      let size;
+      try {
+        size = statSync(release.path).size;
+      } catch {
+        size = 0;
+      }
+      if (size !== release.bytes)
+        throw failure(404, "Release is no longer available.");
+      audit(req.user.id, "release.download", {
+        version: release.version,
+        sha256: release.sha256,
+      });
+      res.setHeader("Cache-Control", "private, no-store");
+      res.setHeader("Content-Type", "application/zip");
+      res.setHeader("Content-Length", release.bytes);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="Dryad-${release.version}.zip"`,
+      );
+      createReadStream(release.path)
+        .on("error", () => res.destroy())
+        .pipe(res);
+    },
+  );
   function device(id) {
     const d = get(
       "SELECT d.*,k.public_key,k.revoked_at,h.fingerprint AS hardware FROM devices d JOIN device_keys k ON k.device_id=d.id LEFT JOIN device_hardware h ON h.device_id=d.id WHERE d.id=?",
@@ -244,7 +251,7 @@ export function installNative(
     entitlement(d.user_id);
     return { d, body, t };
   }
-  app.post("/api/native/pair/start", (req, res) => {
+  app.post("/api/native/pair/start", limits.pairing, (req, res) => {
     const { publicKey, name, hardware } = req.body;
     if (typeof hardware !== "string" || !/^[a-f0-9]{64}$/.test(hardware))
       throw failure(
@@ -600,22 +607,27 @@ export function installNative(
     } catch {}
     if (!r || size !== r.bytes)
       throw failure(404, "Release is no longer available.");
-    run("DELETE FROM download_tokens WHERE hash=?", t.hash);
-    res.setHeader("Cache-Control", "no-store");
-    res.setHeader(
-      "Content-Disposition",
-      packageUpdate
-        ? 'attachment; filename="Dryad-update.zip"'
-        : 'attachment; filename="Dryad.dll"',
+    req.downloadUserId = d.user_id;
+    limits.downloadIp(req, res, () =>
+      limits.downloadAccount(req, res, () => {
+        run("DELETE FROM download_tokens WHERE hash=?", t.hash);
+        res.setHeader("Cache-Control", "no-store");
+        res.setHeader(
+          "Content-Disposition",
+          packageUpdate
+            ? 'attachment; filename="Dryad-update.zip"'
+            : 'attachment; filename="Dryad.dll"',
+        );
+        res.setHeader(
+          "Content-Type",
+          packageUpdate ? "application/zip" : "application/octet-stream",
+        );
+        res.setHeader("Content-Length", r.bytes);
+        createReadStream(r.path)
+          .on("error", () => res.destroy())
+          .pipe(res);
+      }),
     );
-    res.setHeader(
-      "Content-Type",
-      packageUpdate ? "application/zip" : "application/octet-stream",
-    );
-    res.setHeader("Content-Length", r.bytes);
-    createReadStream(r.path)
-      .on("error", () => res.destroy())
-      .pipe(res);
   });
   return { entitlement, audit };
 }

@@ -81,3 +81,36 @@
   font-size: 12px;
   margin-top: 12px;
 }
+
+.version-page {
+  padding: 72px 24px 100px;
+}
+.version-list {
+  max-width: 860px;
+  margin: 40px auto 0;
+  display: grid;
+  gap: 24px;
+}
+.version-entry {
+  padding: 30px;
+}
+.version-entry h2 {
+  margin: 22px 0 16px;
+  font-size: 26px;
+}
+.version-entry ul {
+  padding-left: 20px;
+  color: var(--muted);
+  line-height: 1.85;
+}
+.version-meta,
+.version-links {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.version-meta time {
+  color: var(--muted);
+  font-size: 13px;
+}

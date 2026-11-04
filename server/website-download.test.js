@@ -7,7 +7,10 @@ import { createHash } from "node:crypto";
 import { fixture } from "./test-fixture.js";
 
 test("website package requires a verified paid account, honors billing holds and catalog revocation, and needs no paired device", async () => {
-  const f = await fixture({ allowDevLicenses: false }),
+  const f = await fixture({
+      allowDevLicenses: false,
+      rateLimits: { downloadAccount: 100 },
+    }),
     dir = mkdtempSync(resolve(tmpdir(), "dryad-download-"));
   const content = Buffer.from("PK-protected-package-fixture"),
     path = resolve(dir, "Dryad.zip"),

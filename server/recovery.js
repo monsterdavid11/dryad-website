@@ -3,7 +3,7 @@ import { digest, secret, failure } from "./security.js";
 import { recoveryEmail } from "./email-templates.js";
 export function installRecovery(
   app,
-  { db, origin, requireUser, authLimit, passwordHash, queue },
+  { db, origin, requireUser, authLimit, passwordHash, queue, limits },
 ) {
   const get = (sql, ...args) => db.prepare(sql).get(...args),
     run = (sql, ...args) => db.prepare(sql).run(...args),
@@ -41,28 +41,41 @@ export function installRecovery(
       ),
     }),
   );
-  app.post("/api/account/verify-email", requireUser, authLimit, (req, res) => {
-    if (req.user.demo) throw failure(403, "Create your own account first.");
-    requestToken(req.user, "verify");
-    res.json({
-      ok: true,
-      message: "Verification email queued. Check your inbox.",
-    });
-  });
-  app.post("/api/auth/forgot", authLimit, (req, res) => {
-    if (typeof req.body.email !== "string" || req.body.email.length > 254)
-      throw failure(400, "Enter a valid email.");
-    const u = get(
-      "SELECT * FROM users WHERE email=? AND demo=0",
-      req.body.email.trim().toLowerCase(),
-    );
-    if (u) requestToken(u, "reset");
-    res.json({
-      ok: true,
-      message:
-        "If this email belongs to an account, recovery instructions have been queued.",
-    });
-  });
+  app.post(
+    "/api/account/verify-email",
+    requireUser,
+    authLimit,
+    limits.emailIp,
+    limits.emailAccount,
+    (req, res) => {
+      if (req.user.demo) throw failure(403, "Create your own account first.");
+      requestToken(req.user, "verify");
+      res.json({
+        ok: true,
+        message: "Verification email queued. Check your inbox.",
+      });
+    },
+  );
+  app.post(
+    "/api/auth/forgot",
+    authLimit,
+    limits.emailIp,
+    limits.emailAccount,
+    (req, res) => {
+      if (typeof req.body.email !== "string" || req.body.email.length > 254)
+        throw failure(400, "Enter a valid email.");
+      const u = get(
+        "SELECT * FROM users WHERE email=? AND demo=0",
+        req.body.email.trim().toLowerCase(),
+      );
+      if (u) requestToken(u, "reset");
+      res.json({
+        ok: true,
+        message:
+          "If this email belongs to an account, recovery instructions have been queued.",
+      });
+    },
+  );
   app.post("/api/auth/recover", authLimit, async (req, res) => {
     if (typeof req.body.token !== "string" || req.body.token.length > 128)
       throw failure(400, "Invalid recovery token.");
@@ -124,7 +137,7 @@ export function installRecovery(
       throw e;
     }
   });
-  app.get("/api/account/export", requireUser, (req, res) => {
+  app.get("/api/account/export", requireUser, limits.export, (req, res) => {
     const rows = (sql) => db.prepare(sql).all(req.user.id);
     res.setHeader(
       "Content-Disposition",

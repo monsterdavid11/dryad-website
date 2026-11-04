@@ -1,7 +1,7 @@
 import express from "express";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
-import rateLimit from "express-rate-limit";
+import { requestLimits } from "./request-limits.js";
 import {
   randomBytes,
   randomUUID,
@@ -55,12 +55,14 @@ export function createApp({
   emailSender = null,
   trustProxyHops = 0,
   portalConfiguration = "",
+  rateLimits = {},
 }) {
   if (production && demoMode)
     throw new Error("DEMO_MODE must be false in production");
   if (!["test", "live"].includes(billingMode))
     throw new Error("Invalid billing mode.");
   const app = express();
+  const limits = requestLimits(db, rateLimits);
   if (trustProxyHops > 0) app.set("trust proxy", trustProxyHops);
   const checkoutLocks = new Set();
   const queue = jobQueue(db, {
@@ -117,16 +119,7 @@ export function createApp({
       req.body = {};
     next();
   });
-  app.use(
-    "/api",
-    rateLimit({
-      windowMs: 60_000,
-      limit: 150,
-      standardHeaders: "draft-8",
-      legacyHeaders: false,
-      message: { error: "Too many requests. Try again in a minute." },
-    }),
-  );
+  app.use("/api", limits.api);
   app.use("/api", (req, res, next) => {
     res.setHeader("Cache-Control", "no-store");
     if (
@@ -146,13 +139,19 @@ export function createApp({
   });
   const requireUser = (req, res, next) =>
     req.user ? next() : next(fail(401, "Please sign in to continue."));
-  const authLimit = rateLimit({
-    windowMs: 15 * 60_000,
-    limit: 20,
-    standardHeaders: "draft-8",
-    legacyHeaders: false,
-    message: { error: "Too many sign-in attempts. Please try again later." },
-  });
+  const authLimit = limits.auth;
+  const hasMembership = (id) => {
+    const sub = query(
+      "SELECT status,period_end FROM subscriptions WHERE user_id=?",
+      id,
+    );
+    return Boolean(
+      sub &&
+      ["active", "trialing"].includes(sub.status) &&
+      sub.period_end > Date.now() / 1000 &&
+      !query("SELECT id FROM billing_holds WHERE user_id=?", id),
+    );
+  };
   const session = (res, user) => {
     const token = randomBytes(32).toString("hex");
     run("DELETE FROM sessions WHERE expires<=?", Date.now());
@@ -184,7 +183,14 @@ export function createApp({
     }),
   );
   app.get("/api/auth/me", (req, res) =>
-    res.json({ user: req.user ? safeUser(req.user) : null }),
+    res.json({
+      user: req.user
+        ? {
+            ...safeUser(req.user),
+            membershipActive: !req.user.demo && hasMembership(req.user.id),
+          }
+        : null,
+    }),
   );
   app.post("/api/auth/register", authLimit, async (req, res) => {
     const { name, email, password } = req.body;
@@ -220,7 +226,7 @@ export function createApp({
     session(res, user);
     res.status(201).json({ user: safeUser(user) });
   });
-  app.post("/api/auth/login", authLimit, async (req, res) => {
+  app.post("/api/auth/login", authLimit, limits.login, async (req, res) => {
     const { email, password } = req.body;
     if (
       typeof email !== "string" ||
@@ -239,7 +245,9 @@ export function createApp({
     );
     if (!user || !valid) throw fail(401, "Email or password is incorrect.");
     session(res, user);
-    res.json({ user: safeUser(user) });
+    res.json({
+      user: { ...safeUser(user), membershipActive: hasMembership(user.id) },
+    });
   });
   app.post("/api/auth/demo", authLimit, async (req, res) => {
     if (!demoMode || production) throw fail(404, "Demo mode is unavailable.");
@@ -308,7 +316,10 @@ export function createApp({
       )
       .all(req.user.id);
     res.json({
-      user: safeUser(req.user),
+      user: {
+        ...safeUser(req.user),
+        membershipActive: !req.user.demo && hasMembership(req.user.id),
+      },
       billingHold: Boolean(
         query("SELECT id FROM billing_holds WHERE user_id=?", req.user.id),
       ),
@@ -340,7 +351,10 @@ export function createApp({
       throw fail(400, "Your name must have 2–60 characters.");
     run("UPDATE users SET name=? WHERE id=?", name.trim(), req.user.id);
     res.json({
-      user: safeUser(query("SELECT * FROM users WHERE id=?", req.user.id)),
+      user: {
+        ...safeUser(query("SELECT * FROM users WHERE id=?", req.user.id)),
+        membershipActive: hasMembership(req.user.id),
+      },
     });
   });
   app.post(
@@ -409,6 +423,7 @@ export function createApp({
   app.post(
     "/api/billing/checkout",
     requireUser,
+    limits.billing,
     (req, res, next) => {
       if (checkoutLocks.has(req.user.id))
         return next(
@@ -518,16 +533,21 @@ export function createApp({
       res.json({ url: checkout.url });
     },
   );
-  app.post("/api/billing/portal", requireUser, async (req, res) => {
-    if (!stripe || !req.user.stripe_customer || req.user.demo)
-      throw fail(409, "There is no Stripe billing account to manage yet.");
-    const portal = await stripe.billingPortal.sessions.create({
-      customer: req.user.stripe_customer,
-      return_url: `${origin}/account?tab=billing`,
-      ...(portalConfiguration ? { configuration: portalConfiguration } : {}),
-    });
-    res.json({ url: portal.url });
-  });
+  app.post(
+    "/api/billing/portal",
+    requireUser,
+    limits.billing,
+    async (req, res) => {
+      if (!stripe || !req.user.stripe_customer || req.user.demo)
+        throw fail(409, "There is no Stripe billing account to manage yet.");
+      const portal = await stripe.billingPortal.sessions.create({
+        customer: req.user.stripe_customer,
+        return_url: `${origin}/account?tab=billing`,
+        ...(portalConfiguration ? { configuration: portalConfiguration } : {}),
+      });
+      res.json({ url: portal.url });
+    },
+  );
   installNative(app, {
     db,
     signing,
@@ -537,12 +557,14 @@ export function createApp({
     requireVerified,
     requireUser,
     ...policy,
+    limits,
   });
   installRecovery(app, {
     db,
     origin,
     requireUser,
     authLimit,
+    limits,
     passwordHash,
     queue,
   });

@@ -49,6 +49,7 @@ import "./styles.css";
 import MemberFlows, { SecurityPanel } from "./MemberFlows.jsx";
 import "./member-flows.css";
 import ReleaseDownload from "./ReleaseDownload.jsx";
+import VersionLog from "./VersionLog.jsx";
 
 const Auth = createContext(null);
 async function api(path, options = {}) {
@@ -113,11 +114,21 @@ function App() {
       })
       .catch(() =>
         setBootError(
-          "The local API is unavailable. Start both services with npm run dev.",
+          "Dryad is temporarily unavailable. Please try again shortly.",
         ),
       );
   };
   useEffect(boot, []);
+  useEffect(() => {
+    if (!ready) return;
+    const refresh = () =>
+      api("/auth/me")
+        .then((a) => setUser(a.user))
+        .catch(() => {});
+    refresh();
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
+  }, [location.pathname, ready]);
   useEffect(() => {
     setMenu(false);
     window.scrollTo(0, 0);
@@ -161,6 +172,7 @@ function App() {
                 Features
               </NavLink>
               <NavLink to="/purchase">Membership</NavLink>
+              <NavLink to="/versions">Version log</NavLink>
               <NavLink to="/account">Dashboard</NavLink>
             </nav>
             <div className="nav-actions">
@@ -174,8 +186,12 @@ function App() {
                   Log in <ArrowUpRight size={14} />
                 </Link>
               )}
-              <Button to="/purchase" className="small">
-                Get Dryad <ArrowRight size={15} />
+              <Button
+                to={user?.membershipActive ? "/account" : "/purchase"}
+                className="small"
+              >
+                {user?.membershipActive ? "Dashboard" : "Get Dryad"}{" "}
+                <ArrowRight size={15} />
               </Button>
               <button
                 aria-label="Toggle navigation"
@@ -199,6 +215,8 @@ function App() {
               api={api}
               Button={Button}
             />
+          ) : location.pathname === "/versions" ? (
+            <VersionLog />
           ) : location.pathname === "/login" ? (
             <Login />
           ) : location.pathname === "/purchase" ? (
@@ -227,11 +245,13 @@ function Footer() {
       <div className="footer-top">
         <Brand />
         <p>
-          A little less routine.
-          <br />A lot more possibility.
+          Overlay tools and session tracking
+          <br />
+          for Clash of Clans on Windows.
         </p>
         <div>
           <Link to="/features">Features</Link>
+          <Link to="/versions">Version log</Link>
           <Link to="/purchase">Membership</Link>
           <Link to="/account">Your account</Link>
           <Link to="/terms">Membership policy</Link>
@@ -244,7 +264,7 @@ function Footer() {
           Independent project. Not affiliated with or endorsed by Supercell.
         </span>
         <span className="local-label">
-          <i /> Local preview
+          <i /> Windows x64
         </span>
       </div>
     </footer>
@@ -387,7 +407,7 @@ function OverlayPreview() {
           <Zap size={16} />
         </span>
         <span>
-          Less clicking. <b>More playing.</b>
+          <b>Overlay controls</b>
         </span>
       </div>
       <div className="scene-caption">INTERFACE PREVIEW · SAMPLE DATA</div>
@@ -398,7 +418,7 @@ const features = [
   {
     index: "01",
     tag: "BUILT AROUND YOUR ROUTINE",
-    title: "Your next run.\nAlready dialed in.",
+    title: "Farming and\ndeployment presets.",
     description:
       "Set up your farming loop, choose your deployment preset, and keep session progress right where you need it.",
     video: "farming",
@@ -408,7 +428,7 @@ const features = [
   {
     index: "02",
     tag: "THE DETAILS, HANDLED",
-    title: "Small upgrades.\nSteady progress.",
+    title: "Wall upgrades and\nhero management.",
     description:
       "Keep wall upgrades and hero actions in the same workflow, with the controls and stop conditions in your hands.",
     video: "upgrades",
@@ -418,7 +438,7 @@ const features = [
   {
     index: "03",
     tag: "A CLEARER PICTURE",
-    title: "Every session.\nIn perspective.",
+    title: "Session activity\nand statistics.",
     description:
       "See elapsed time, resource changes, and script progress in the overlay. Your account dashboard is ready for usage reporting.",
     video: "insights",
@@ -468,29 +488,35 @@ function FeatureVideo({ item }) {
   );
 }
 function Features() {
+  const { user } = useContext(Auth);
+  const member = user?.membershipActive;
   return (
     <>
       <section className="hero">
         <div className="smoke smoke-one" />
         <div className="smoke smoke-two" />
         <div className="hero-content">
-          <Link to="/purchase" className="announcement">
-            <span>MEET DRYAD</span> A better rhythm for your village{" "}
+          <Link
+            to={member ? "/account?tab=downloads" : "/purchase"}
+            className="announcement"
+          >
+            <span>DRYAD FOR WINDOWS</span> Overlay and automation tools{" "}
             <ChevronRight size={13} />
           </Link>
           <h1>
-            Less grind.
+            Clash of Clans
             <br />
-            More <span className="gradient-text">good game.</span>
+            <span className="gradient-text">overlay tools.</span>
           </h1>
           <p>
-            Your favorite routines. One powerful overlay.
+            Configure farming, upgrades and deployment from one overlay.
             <br />
-            Take control of your sessions and get back to what you love.
+            Track session activity and manage your device from your account.
           </p>
           <div className="hero-buttons">
-            <Button to="/purchase">
-              Find your flow <ArrowRight size={17} />
+            <Button to={member ? "/account?tab=downloads" : "/purchase"}>
+              {member ? "Download Dryad" : "View membership"}{" "}
+              <ArrowRight size={17} />
             </Button>
             <a href="#features" className="button secondary">
               <Play size={14} fill="currentColor" /> See it in action
@@ -521,15 +547,15 @@ function Features() {
             <span className="dash" /> THE OVERLAY, REIMAGINED
           </span>
           <h2>
-            Let your setup
+            Configure your scripts.
             <br />
-            do the heavy lifting.
+            Track each session.
           </h2>
         </div>
         <p>
-          From the first run to the last upgrade,
+          Farming, wall upgrades and hero management,
           <br />
-          keep your routine simple and your progress visible.
+          with presets, stop conditions and usage reporting.
         </p>
       </section>
       <section className="feature-list">
@@ -547,8 +573,9 @@ function Features() {
                 ))}
               </h3>
               <p>{item.description}</p>
-              <Link to="/purchase">
-                Explore membership <ArrowUpRight size={16} />
+              <Link to={member ? "/account?tab=downloads" : "/purchase"}>
+                {member ? "Open downloads" : "View membership"}{" "}
+                <ArrowUpRight size={16} />
               </Link>
             </div>
             <FeatureVideo item={item} />
@@ -576,7 +603,7 @@ function Features() {
         </div>
         <div>
           <Zap />
-          <h3>Stay in your flow</h3>
+          <h3>Configure your overlay</h3>
           <p>
             Keep the controls close.
             <br />
@@ -588,14 +615,14 @@ function Features() {
         <div className="cta-glow" />
         <span className="eyebrow">YOUR NEXT SESSION STARTS HERE</span>
         <h2>
-          Make room for
+          Download Dryad
           <br />
-          the <span className="gradient-text">good part.</span>
+          for <span className="gradient-text">Windows.</span>
         </h2>
-        <Button to="/purchase">
-          Get Dryad <ArrowRight size={17} />
+        <Button to={member ? "/account?tab=downloads" : "/purchase"}>
+          {member ? "Download Dryad" : "Get Dryad"} <ArrowRight size={17} />
         </Button>
-        <p>One membership. Your whole workflow.</p>
+        <p>One membership. One registered Windows device.</p>
       </section>
     </>
   );
@@ -789,6 +816,7 @@ function Purchase() {
     [params] = useSearchParams();
   const navigate = useNavigate();
   const checkout = async () => {
+    if (user?.membershipActive) return navigate("/account?tab=billing");
     if (!user || user.demo)
       return navigate("/login?next=purchase&mode=register");
     setBusy(true);
@@ -809,15 +837,15 @@ function Purchase() {
     <section className="purchase-page">
       <div className="page-intro">
         <span className="eyebrow">
-          <span className="dash" /> ONE MEMBERSHIP. ALL YOUR POSSIBILITIES.
+          <span className="dash" /> DRYAD SUBSCRIPTIONS
         </span>
         <h1>
-          Find your <span className="gradient-text">flow.</span>
+          Dryad <span className="gradient-text">membership.</span>
         </h1>
         <p>
-          A simpler routine starts with the right tools.
+          Full overlay access for one Windows device.
           <br />
-          Choose how you play. We’ll handle the membership.
+          Choose monthly or yearly billing and cancel renewals anytime.
         </p>
       </div>
       {params.get("checkout") === "canceled" && (
@@ -879,9 +907,11 @@ function Purchase() {
               <LoaderCircle className="spin" size={18} />
             ) : (
               <>
-                {user && !user.demo
-                  ? "Continue to Stripe"
-                  : "Create an account to continue"}
+                {user?.membershipActive
+                  ? "Manage membership"
+                  : user && !user.demo
+                    ? "Continue to Stripe"
+                    : "Create an account to continue"}
                 <ArrowUpRight size={17} />
               </>
             )}
@@ -905,14 +935,14 @@ function Purchase() {
         </div>
         <div className="purchase-aside">
           <h3>
-            Less friction.
+            Set up your account.
             <br />
-            From the very first session.
+            Connect your device.
           </h3>
           {[
             {
               icon: UserRound,
-              title: "01 / Make it yours",
+              title: "01 / Create an account",
               text: "Create an account to keep your membership and activity together.",
             },
             {
@@ -1001,7 +1031,15 @@ function Account() {
   const navigate = useNavigate();
   const refresh = () =>
     api("/account")
-      .then(setData)
+      .then((d) => {
+        setData(d);
+        setUser((current) =>
+          current?.id === d.user.id &&
+          current.membershipActive !== d.user.membershipActive
+            ? { ...current, membershipActive: d.user.membershipActive }
+            : current,
+        );
+      })
       .catch((e) => setError(e.message));
   useEffect(() => {
     refresh();
@@ -1092,14 +1130,14 @@ function Account() {
               ? "A look at what’s possible."
               : active
                 ? "You’re all set."
-                : "Your next chapter."}
+                : "No active membership."}
           </h4>
           <p>
             {user.demo
-              ? "Sample sessions. Real possibilities."
+              ? "Sample account and session data."
               : active
                 ? "Manage your membership anytime."
-                : "Make your routine a little lighter."}
+                : "Choose a plan to access the overlay."}
           </p>
           <Link to="/purchase">
             Explore membership <ArrowUpRight size={14} />
@@ -1214,7 +1252,7 @@ function Account() {
                   {[
                     {
                       icon: Clock3,
-                      label: "Time in your flow",
+                      label: "Session time",
                       value: (totals.seconds / 3600).toFixed(1),
                       unit: "hrs",
                       detail: "Across all scripts",
@@ -1609,7 +1647,7 @@ function Account() {
               : "Your workspace · Authenticated usage reporting"}
           </span>
           <Link to="/features">
-            Back to the good part <ArrowUpRight size={13} />
+            View features <ArrowUpRight size={13} />
           </Link>
         </div>
       </div>
@@ -1622,7 +1660,7 @@ function ScriptTable({ rows, onViewAll }) {
       <div className="panel-title">
         <div>
           <h3>Script activity</h3>
-          <p>The routines behind your progress</p>
+          <p>Script usage and session history</p>
         </div>
         {onViewAll && (
           <button className="text-button" onClick={onViewAll}>
