@@ -1,9 +1,10 @@
 import Stripe from "stripe";
 import { plans } from "../server/plans.js";
 import { readFileSync, writeFileSync } from "node:fs";
-if (!process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_"))
-  throw Error("Configure a Stripe test key in .env first.");
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+import { stripeSettings } from "../server/stripe-settings.js";
+const { key, mode } = stripeSettings();
+if (!key) throw Error("Configure a Stripe key first.");
+const stripe = new Stripe(key);
 for (const plan of plans) {
   const variable =
       plan.id === "monthly" ? "STRIPE_PRICE_MONTHLY" : "STRIPE_PRICE_YEARLY",
@@ -17,13 +18,18 @@ for (const plan of plans) {
       ? (await stripe.subscriptionItems.retrieve(id)).price
       : await stripe.prices.retrieve(id);
     const matches =
-      !p.livemode &&
+      p.livemode === (mode === "live") &&
       p.active &&
       p.currency === "usd" &&
       p.unit_amount === plan.amount &&
       p.recurring?.interval === plan.interval &&
       p.recurring.interval_count === 1;
-    if (id.startsWith("si_") && matches && process.argv.includes("--fix")) {
+    if (
+      id.startsWith("si_") &&
+      matches &&
+      mode === "test" &&
+      process.argv.includes("--fix")
+    ) {
       const env = readFileSync(".env", "utf8").replace(
         new RegExp("^" + variable + "=.*$", "m"),
         variable + "=" + p.id,

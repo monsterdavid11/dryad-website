@@ -5,12 +5,11 @@ import { readFileSync, existsSync } from "node:fs";
 import { signer } from "./security.js";
 import { reconcileSubscriptions } from "./reconcile.js";
 import { activateRelease } from "./release-activation.js";
+import { stripeSettings } from "./stripe-settings.js";
 const production = process.env.NODE_ENV === "production";
 if (production && !process.env.APP_ORIGIN?.startsWith("https://"))
   throw new Error("Production APP_ORIGIN must use HTTPS.");
-const key = process.env.STRIPE_SECRET_KEY;
-if (key && !key.startsWith("sk_test_"))
-  throw new Error("This prototype accepts Stripe test keys only.");
+const { key, mode: billingMode } = stripeSettings();
 const db = openDatabase(
   process.env.DATABASE_PATH || "./data/playoverlay.sqlite",
 );
@@ -32,6 +31,7 @@ const app = createApp({
   demoMode: !production && process.env.DEMO_MODE !== "false",
   origin: process.env.APP_ORIGIN || "http://127.0.0.1:5173",
   stripe: key ? new Stripe(key) : null,
+  billingMode,
   webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
   priceIds: {
     monthly: process.env.STRIPE_PRICE_MONTHLY,

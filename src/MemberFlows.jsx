@@ -169,9 +169,8 @@ export default function MemberFlows({ kind, user, api, Button }) {
               is unavailable until the cooldown ends.
             </p>
             <p>
-              Local preview uses test payments only. These product policies need
-              the operator’s full terms and contact information before public
-              sale.
+              Payments are processed securely by Stripe. Your account shows your
+              subscription status and provides access to the billing portal.
             </p>
           </>
         )}

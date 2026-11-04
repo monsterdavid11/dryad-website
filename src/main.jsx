@@ -895,8 +895,10 @@ function Purchase() {
           <p className="form-note">
             Dryad membership ·{" "}
             {config.billingReady
-              ? "Stripe test mode. Use test payment details only."
-              : "Local preview. Stripe test credentials are not configured."}
+              ? config.billingMode === "live"
+                ? "Renews automatically. Cancel renewals anytime in your billing portal."
+                : "Stripe test mode. Use test payment details only."
+              : "Purchases are currently unavailable."}
           </p>
         </div>
         <div className="purchase-aside">
@@ -977,7 +979,7 @@ function Purchase() {
   );
 }
 function Account() {
-  const { user, setUser, logout } = useContext(Auth),
+  const { user, setUser, logout, config } = useContext(Auth),
     [data, setData] = useState(null),
     [error, setError] = useState(""),
     [message, setMessage] = useState(""),
@@ -1471,8 +1473,11 @@ function Account() {
                   </Button>
                 </div>
                 <p className="form-note">
-                  This build uses Stripe test mode. No live payments are
-                  enabled.
+                  {config.billingMode === "live"
+                    ? "Manage payment methods, invoices and renewal cancellation securely with Stripe."
+                    : config.billingReady
+                      ? "Stripe test mode. No real payment is taken."
+                      : "Billing is currently unavailable."}
                 </p>
               </section>
             )}

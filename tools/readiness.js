@@ -1,4 +1,11 @@
 import { existsSync } from "node:fs";
+import { stripeSettings } from "../server/stripe-settings.js";
+let billing;
+try {
+  billing = stripeSettings();
+} catch {
+  billing = { mode: "invalid" };
+}
 const required = [
   "APP_ORIGIN",
   "STRIPE_SECRET_KEY",
@@ -25,10 +32,10 @@ console.log(
       signingKeyPresent: existsSync(
         process.env.LICENSE_KEY_PATH || "./data/keys/license.pem",
       ),
-      paymentsMode: process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_")
-        ? "test"
+      paymentsMode: process.env.STRIPE_SECRET_KEY
+        ? billing.mode
         : "not configured",
-      livePaymentsEnabled: false,
+      livePaymentsEnabled: Boolean(billing.key && billing.mode === "live"),
       database:
         "SQLite — single-instance local implementation; PostgreSQL adapter not implemented",
       domain: process.env.APP_ORIGIN || "https://dryadclient.dev",

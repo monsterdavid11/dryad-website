@@ -42,6 +42,7 @@ const fail = (status, message) => Object.assign(new Error(message), { status });
 export function createApp({
   db,
   stripe = null,
+  billingMode = "test",
   webhookSecret = "",
   priceIds = {},
   origin = "http://127.0.0.1:5173",
@@ -57,6 +58,8 @@ export function createApp({
 }) {
   if (production && demoMode)
     throw new Error("DEMO_MODE must be false in production");
+  if (!["test", "live"].includes(billingMode))
+    throw new Error("Invalid billing mode.");
   const app = express();
   if (trustProxyHops > 0) app.set("trust proxy", trustProxyHops);
   const checkoutLocks = new Set();
@@ -94,7 +97,8 @@ export function createApp({
             req.headers["stripe-signature"],
             webhookSecret,
           );
-          if (event.livemode) throw new Error("Live events are not enabled.");
+          if (Boolean(event.livemode) !== (billingMode === "live"))
+            throw new Error("Webhook mode does not match.");
         } catch {
           throw fail(400, "Invalid webhook signature.");
         }
@@ -173,6 +177,7 @@ export function createApp({
       billingReady: Boolean(
         stripe && webhookSecret && priceIds.monthly && priceIds.yearly,
       ),
+      billingMode: stripe ? billingMode : "disabled",
       plans,
       policy,
       allowDevLicenses,
@@ -428,7 +433,7 @@ export function createApp({
       if (!stripe || !webhookSecret || !priceIds[plan.id])
         throw fail(
           503,
-          "Stripe test checkout is not configured yet. No payment has been taken.",
+          "Checkout is not configured yet. No payment has been taken.",
         );
       const existing = query(
         "SELECT status FROM subscriptions WHERE user_id=?",
@@ -464,6 +469,7 @@ export function createApp({
       const price = await stripe.prices.retrieve(priceIds[plan.id]);
       if (
         !price.active ||
+        Boolean(price.livemode) !== (billingMode === "live") ||
         price.currency !== "usd" ||
         price.unit_amount !== plan.amount ||
         price.recurring?.interval !== plan.interval ||
