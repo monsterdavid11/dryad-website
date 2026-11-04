@@ -1,5 +1,16 @@
 # Dryad hosted preview
 
+## Live billing activated — 2026-11-03
+
+Stripe is now configured for real USD $5.99/month and $48.16/year purchases on the
+existing Render service. Runtime `c5322b0`, deploy `dep-dblag12jnfac73fd7q1g`, is live.
+The restricted live key and dedicated hosted webhook secret are stored in Render;
+email, protected release signing and persistent data were preserved. Health,
+live billing readiness, signature handling, both unpaid live Checkout plans and
+portal period-end cancellation settings passed. Diagnostic sessions were expired;
+no actual purchase was submitted. See `STRIPE_PAYMENTS.md` for acceptance limits.
+This supersedes older billing-disabled statements below.
+
 ## Protected release activated — 2026-11-03
 
 Dryad 1.0.0 licensing and the stable protected DLL catalog are live on the existing

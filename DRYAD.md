@@ -1,5 +1,12 @@
 # Dryad — current implementation and local runbook
 
+**Live Stripe activation — 2026-11-03:** Real $5.99/month and $48.16/year purchases
+are enabled on the existing Render service. Runtime `c5322b0` is live; email and
+protected release licensing remain configured. Both live unpaid Checkout plans,
+webhook signature handling and period-end cancellation settings passed. No actual
+payment was submitted; completed-purchase entitlement acceptance remains pending.
+See `STRIPE_PAYMENTS.md`. This supersedes older test-only billing notes below.
+
 **Hosted license activation — 2026-11-03:** Protected release 1.0.0 is live on Render with the production signing secret, machine binding and authenticated stable DLL catalog. See DEPLOYMENT.md for the deployed commit and verification. Stripe billing remains unconfigured; no memberships were granted by activation.
 
 **Protected release update — 2026-10-31:** Dryad 1.0.0 was built locally with machine-bound membership leases and a separate production signing pin. Server/client checks were tested together. The hosted activation above supersedes the earlier build-time pending status.

@@ -1,7 +1,19 @@
 # Stripe payments
 
-Live billing preparation — 2026-11-03. Hosted activation awaits the merchant's
-live key; do not infer activation from a source deployment alone.
+Live billing activated — 2026-11-03. Render deploy `dep-dblag12jnfac73fd7q1g`
+of `c5322b0833f43aedbcdf79568c3acb47e7a2ee87` is live. The merchant authorized
+copying the restricted live key and dedicated hosted signing secret to Render.
+Existing email, disk, database and production licensing settings were preserved.
+
+Verified: account charges/payouts enabled; both live USD prices; portal cancellation
+at period end; enabled snapshot webhook using API version `2025-10-29.clover`;
+public config reports live billing ready; health and protected licensing ready.
+A locally signed non-entitling diagnostic was accepted (200) and an invalid
+signature rejected (400). This is endpoint verification, not evidence of a Stripe
+payment event delivery. Both live Checkout plans produced open/unpaid sessions
+with the correct amounts; those diagnostic sessions were immediately expired.
+No payment, subscription, refund or membership was created. A completed real
+purchase and resulting entitlement/native-download acceptance remain untested.
 
 Dryad charges USD $5.99 monthly or $48.16 yearly. Membership permits one device.
 The billing portal lets customers update payment methods, view invoices and cancel
