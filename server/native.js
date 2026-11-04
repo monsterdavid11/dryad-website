@@ -529,18 +529,31 @@ export function installNative(
     const channel = body.channel || "stable";
     if (!["stable", "preview"].includes(channel))
       throw failure(400, "Unknown release channel.");
-    const r = get(
+    let r = get(
       "SELECT * FROM release_catalog WHERE channel=? AND enabled=1",
       channel,
     );
     if (!r) throw failure(404, "No release is published in this channel.");
+    const packageUpdate = body.artifact === "package";
+    if (body.artifact && !["package", "dll"].includes(body.artifact))
+      throw failure(400, "Unknown release artifact.");
+    if (packageUpdate) {
+      const pkg = get(
+        "SELECT * FROM release_packages WHERE channel=? AND release_sha256=?",
+        channel,
+        r.sha256,
+      );
+      if (!pkg)
+        throw failure(404, "No update package is published in this channel.");
+      r = { ...r, path: pkg.path, sha256: pkg.sha256, bytes: pkg.bytes };
+    }
     if (!signing) throw failure(503, "Release signing is unavailable.");
     const token = secret();
     run(
       "INSERT INTO download_tokens VALUES(?,?,?,?,?)",
       digest(token),
       d.id,
-      channel,
+      packageUpdate ? `${channel}:package` : channel,
       r.sha256,
       now() + 60,
     );
@@ -551,6 +564,7 @@ export function installNative(
         iat: now(),
         exp: now() + 60,
         channel,
+        artifact: packageUpdate ? "package" : "dll",
         version: r.version,
         sha256: r.sha256,
         bytes: r.bytes,
@@ -567,16 +581,38 @@ export function installNative(
     if (!t) throw failure(401, "Download link expired.");
     const d = device(t.device_id);
     entitlement(d.user_id);
-    const r = get(
-      "SELECT * FROM release_catalog WHERE channel=? AND enabled=1 AND sha256=?",
-      t.channel,
-      t.sha256,
-    );
-    if (!r || statSync(r.path).size !== r.bytes)
+    const packageUpdate = t.channel.endsWith(":package");
+    const channel = packageUpdate ? t.channel.slice(0, -8) : t.channel;
+    const r = packageUpdate
+      ? get(
+          "SELECT p.* FROM release_packages p JOIN release_catalog r ON r.channel=p.channel AND r.sha256=p.release_sha256 WHERE p.channel=? AND p.sha256=? AND r.enabled=1",
+          channel,
+          t.sha256,
+        )
+      : get(
+          "SELECT * FROM release_catalog WHERE channel=? AND enabled=1 AND sha256=?",
+          channel,
+          t.sha256,
+        );
+    let size = 0;
+    try {
+      if (r) size = statSync(r.path).size;
+    } catch {}
+    if (!r || size !== r.bytes)
       throw failure(404, "Release is no longer available.");
     run("DELETE FROM download_tokens WHERE hash=?", t.hash);
     res.setHeader("Cache-Control", "no-store");
-    res.setHeader("Content-Disposition", 'attachment; filename="Dryad.dll"');
+    res.setHeader(
+      "Content-Disposition",
+      packageUpdate
+        ? 'attachment; filename="Dryad-update.zip"'
+        : 'attachment; filename="Dryad.dll"',
+    );
+    res.setHeader(
+      "Content-Type",
+      packageUpdate ? "application/zip" : "application/octet-stream",
+    );
+    res.setHeader("Content-Length", r.bytes);
     createReadStream(r.path)
       .on("error", () => res.destroy())
       .pipe(res);
