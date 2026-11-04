@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import { readFileSync, writeFileSync } from "node:fs";
 import { plans } from "../server/plans.js";
 const path = ".env.stripe-live";
-if (!process.env.STRIPE_SECRET_KEY?.startsWith("sk_live_"))
+if (!/^(sk|rk)_live_/.test(process.env.STRIPE_SECRET_KEY || ""))
   throw new Error("Add a live secret key to ignored .env.stripe-live first.");
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const events = [
@@ -113,7 +113,10 @@ try {
       subscription_cancel: {
         enabled: true,
         mode: "at_period_end",
-        cancellation_reason: { enabled: false },
+        cancellation_reason: {
+          enabled: false,
+          options: ["too_expensive", "other"],
+        },
       },
       subscription_update: { enabled: false },
     },
@@ -125,7 +128,7 @@ try {
         active: true,
       })
     : await stripe.billingPortal.configurations.create(portalSettings, {
-        idempotencyKey: "dryad-live-portal-v1",
+        idempotencyKey: "dryad-live-portal-v3",
       });
   persist("STRIPE_PORTAL_CONFIGURATION", portal.id);
   const url = origin + "/api/billing/webhook";
@@ -171,8 +174,15 @@ try {
   // Provider error bodies can contain private account information.
   console.error(
     error.type
-      ? `Stripe setup failed: ${error.code || error.type}`
+      ? `Stripe setup failed: ${error.code || error.type}; parameter: ${error.param || "unspecified"}`
       : error.message,
   );
+  if (error.type === "StripeInvalidRequestError")
+    console.error(
+      String(error.message).replace(
+        /(?:sk|rk)_(?:live|test)_\S+|whsec_\S+|[\w.+-]+@[\w.-]+/g,
+        "[redacted]",
+      ),
+    );
   process.exitCode = 1;
 }
