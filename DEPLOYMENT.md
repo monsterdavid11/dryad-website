@@ -1,5 +1,31 @@
 # Dryad hosted preview
 
+## Protected release activated — 2026-11-03
+
+Dryad 1.0.0 licensing and the stable protected DLL catalog are live on the existing
+`dryad-website` service. Runtime commit: `c3590c72bb92249ba103e6aeb5ef47200b0f44c2`.
+Successful deploy: `dep-dbl9jrl9el5s73ccdvr0`.
+
+The matching production signing key is installed as a Render secret file;
+`LICENSE_KEY_PATH=/etc/secrets/release-1.0.0.pem`. Only the public key ID
+`c1fd258abf9ab390` is recorded here. Email settings and the existing disk/database
+were preserved. `DRYAD_RELEASE_MANIFEST=./release-assets/stable.json` verifies the
+binary and installs it into private persistent release storage at startup. A
+database backup is created before a changed release is registered. Restarts of the
+same release preserve an operator's explicit catalog disable.
+
+HTTPS health and `/api/native/status` passed: licensing ready, hardware binding
+enabled, development licenses disabled, stable version 1.0.0 and matching DLL
+SHA-256. Hosted negative checks passed for missing hardware, unapproved pairing,
+account approval without login and unauthenticated download. The test pairing is
+unapproved and expires automatically; no accounts, emails or memberships changed.
+
+**Billing remains separate:** Stripe is still unconfigured and live keys remain
+blocked by the application. Licensing readiness does not grant anyone a membership.
+A real entitled-account positive hosted lease/download flow remains pending that
+setup. Existing local production-key launcher/native integration coverage passed.
+The older preview notes below are historical snapshots.
+
 This repository contains the website and Node API only. The native overlay and launcher remain in the parent development workspace.
 
 ## Current status — 2026-10-31
